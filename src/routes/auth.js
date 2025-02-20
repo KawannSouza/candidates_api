@@ -2,10 +2,16 @@ import express, { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { authenticate } from '../middlewares/authMiddleware';
 
 const prisma = new PrismaClient();
 
 const router = Router();
+
+//ROTA DE TESTE
+router.get('/test', authenticate, (req, res) => {
+    res.status(200).json({ message: 'Authenticated' });
+});
 
 //REGISTRAR UM USUÁRIO
 router.post('/user/register', async (req, res) => {
