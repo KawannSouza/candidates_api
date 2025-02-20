@@ -1,13 +1,12 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const app = express();
-app.use(express.json());
+const router = Router();
 
-app.post('/user/register', async (req, res) => {
+router.post('/user/register', async (req, res) => {
     const {name, email, password, confirmPassword} = req.body;
 
     if(user.password !== user.confirmPassword) {
@@ -37,3 +36,7 @@ app.post('/user/register', async (req, res) => {
         res.status(500).json({ message: 'Internal server error'});
     }
 })
+
+console.log('Auth route loaded');
+
+export { router as auth };
