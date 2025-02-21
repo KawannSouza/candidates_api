@@ -5,6 +5,44 @@ const prisma = new PrismaClient();
 
 const router = Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Candidates
+ *     description: Operações para gerenciar candidatos
+ */
+
+/**
+ * @swagger
+ * /candidates:
+ *   post:
+ *     summary: Cria um novo candidato
+ *     description: Registra um novo candidato no sistema.
+ *     tags: [Candidates]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               age:
+ *                 type: integer
+ *               email:
+ *                 type: string
+ *               mainSkill:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Candidato criado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
 //CRIAR CANDIDATO
 router.post('/', async (req, res) => {
     try {
@@ -24,6 +62,18 @@ router.post('/', async (req, res) => {
     }
 })
 
+/**
+ * @swagger
+ * /candidates:
+ *   get:
+ *     summary: Lista todos os candidatos
+ *     description: Retorna todos os candidatos cadastrados no sistema.
+ *     tags: [Candidates]
+ *     responses:
+ *       200:
+ *         description: Lista de candidatos retornada com sucesso
+ */
+
 //LISTAR TODOS OS CANDIDATOS
 router.get('/', async (req, res) => {
     
@@ -31,6 +81,25 @@ router.get('/', async (req, res) => {
 
     res.status(200).json(users);
 })
+
+/**
+ * @swagger
+ * /candidates/skill/{skill}:
+ *   get:
+ *     summary: Lista candidatos por skill
+ *     description: Retorna candidatos filtrados pela habilidade principal.
+ *     tags: [Candidates]
+ *     parameters:
+ *       - name: skill
+ *         in: path
+ *         required: true
+ *         description: A habilidade principal dos candidatos
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de candidatos retornada com sucesso
+ */
 
 //LISTAR CANDIDATO POR SKILL
 router.get('/skill/:skill', async (req, res) => {
@@ -43,6 +112,44 @@ router.get('/skill/:skill', async (req, res) => {
 
     res.status(200).json(users);
 })
+
+/**
+ * @swagger
+ * /candidates/{id}:
+ *   put:
+ *     summary: Edita as informações de um candidato
+ *     description: Atualiza as informações de um candidato baseado no ID fornecido.
+ *     tags: [Candidates]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID do candidato
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               age:
+ *                 type: integer
+ *               email:
+ *                 type: string
+ *               mainSkill:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Candidato atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Candidato não encontrado
+ */
 
 //EDITAR CANDIDATO POR ID
 router.put('/:id', async (req, res) => {
@@ -62,6 +169,26 @@ router.put('/:id', async (req, res) => {
     res.status(200).json({ message: 'Candidate updated', data: req.body});
 });
 
+/**
+ * @swagger
+ * /candidates/{id}:
+ *   delete:
+ *     summary: Deleta um candidato por ID
+ *     description: Remove um candidato do sistema baseado no ID fornecido.
+ *     tags: [Candidates]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID do candidato
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Candidato deletado com sucesso
+ *       404:
+ *         description: Candidato não encontrado
+ */
 
 //DELETAR CANDIDATO POR ID
 router.delete('/:id', async (req, res) => {
