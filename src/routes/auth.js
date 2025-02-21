@@ -2,11 +2,14 @@ import express, { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const prisma = new PrismaClient();
 
 const router = Router();
+
+const externalId = uuidv4();
 
 /**
  * @swagger
@@ -69,7 +72,7 @@ router.get('/user/test', authMiddleware, (req, res) => {
 
 //REGISTRAR UM USUÁRIO
 router.post('/user/register', async (req, res) => {
-    const {name, email, password, confirmPassword} = req.body;
+    const {name, email, role, password, confirmPassword} = req.body;
 
     if(password !== confirmPassword) {
         return res.status(400).json({ message: 'Passwords do not match' });
@@ -85,17 +88,19 @@ router.post('/user/register', async (req, res) => {
     try {
         const user = await prisma.user.create({
             data: {
+                externalId: externalId,
                 name,
                 email,
+                role: role,
                 password: hashedPassword
             }
         });
 
-        const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {expiresIn: '1h'});
+        const token = jwt.sign({ id: user.externalId, email: user.email }, process.env.JWT_SECRET, {expiresIn: '1h'});
 
         res.status(201).json({
             message: 'User registered successfully',
-            user: { name: user.name, email: user.email },
+            user: { name: user.name, email: user.email, role: user.role },
             token
         });
     } catch (error) {
@@ -144,7 +149,7 @@ router.post('/user/login', async (req, res) => {
         return res.status(400).json({ message: 'Invalid password' });
     }
 
-    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {expiresIn: '1h'});
+    const token = jwt.sign({ id: user.externalId, email: user.email }, process.env.JWT_SECRET, {expiresIn: '1h'});
     res.status(200).json({ message: 'User logged in sucessfully', token});
 });
 
