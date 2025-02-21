@@ -2,14 +2,14 @@ import express, { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { authenticate } from '../middlewares/authMiddleware';
+import authMiddleware from '../middlewares/authMiddleware.js';
 
 const prisma = new PrismaClient();
 
 const router = Router();
 
 //ROTA DE TESTE
-router.get('/test', authenticate, (req, res) => {
+router.get('/user/test', authMiddleware, (req, res) => {
     res.status(200).json({ message: 'Authenticated' });
 });
 
