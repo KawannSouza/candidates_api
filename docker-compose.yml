@@ -1,0 +1,19 @@
+version: '3'
+services:
+  api:
+    container_name: code-connect-api
+    build: .
+    volumes:
+      - ./src:/usr/src/app/src
+    env_file:
+      - .env
+    ports: 
+      - 3000:3000
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - app_network
+
+networks: 
+  app_network:
+    driver: bridge
