@@ -39,11 +39,11 @@ router.get('/hello-world', async (req, res) => {
 
 /**
  * @swagger
- * /candidate/register:
+ * /recruiter/register:
  *   post:
  *     summary: Registra um novo usuário
  *     description: Cria um novo usuário no sistema, validando a senha, email e criando um token JWT.
- *     tags: [Candidate]
+ *     tags: [Recruiter]
  *     requestBody:
  *       required: true
  *       content:
@@ -189,7 +189,7 @@ router.post('/login', async (req, res) => {
  *     summary: Lista todos os candidatos
  *     description: Retorna um JSON com todos os candidatos.
  *     tags:
- *       - Test
+ *       - Recruiter
  *     responses:
  *       200:
  *         description: Sucesso. Retorna todos os candidatos
