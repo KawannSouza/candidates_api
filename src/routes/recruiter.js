@@ -5,25 +5,15 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import authenticate from '../middlewares/authMiddleware.js';
+import { isRecruiter } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 const prisma = new PrismaClient();
 dotenv.config();
 
-const connectDB = async () => {
-    try {
-        await prisma.$connect();
-        console.log('Connected to the database');
-    } catch (error) {
-        console.log('Error connecting to the database');
-    }
-}
-
-connectDB();
-
 /**
  * @swagger
- * /candidate/hello-world:
+ * /recruiter/hello-world:
  *   get:
  *     summary: Testa a conexão com o servidor
  *     description: Retorna uma mensagem de teste para verificar se o servidor está respondendo.
@@ -42,10 +32,10 @@ connectDB();
  *                   example: "Hello World"
  */
 
-//ROTA DE TESTE
+//ROTA DE TESTE 
 router.get('/hello-world', async (req, res) => {
     res.status(200).json({ message: 'Hello World' });
-})
+});
 
 /**
  * @swagger
@@ -67,6 +57,8 @@ router.get('/hello-world', async (req, res) => {
  *                 type: integer
  *               username:
  *                 type: string
+ *               company:
+ *                 type: String
  *               email:
  *                 type: string
  *               password:
@@ -82,63 +74,63 @@ router.get('/hello-world', async (req, res) => {
  *         description: Erro interno do servidor
  */
 
-//REGISTRAR-SE COMO CANDIDATO
+//REGISTRAR-SE COMO RECRUTADOR
 router.post('/register', async (req, res) => {
     try {
-        const { name, age, username, email, password, confirmPassword } = req.body;
+        const { name, age, username, company, email, password, confirmPassword } = req.body;
         const externalId = uuidv4();
 
-
-        if (!name || !age || !username || !email || !password || !confirmPassword) {
-            return res.status(400).json({ message: 'Fill in all fields' });
+        if (!name || !age || !username || !company || !email || !password || !confirmPassword) {
+            res.status(400).json({ message: 'Fill in all fields' });
         }
-        
+
         if (password !== confirmPassword) {
-            return res.status(401).json({ message: 'Passwords do not match' });
+            res.status(401).json({ message: 'Passwords do not match' });
         }
 
-        const userExists = await prisma.candidates.findFirst({ where: { username } });
+        const userExists = await prisma.recruiter.findFirst({ where: { username } });
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            res.status(400).json({ message: 'User already exists' });
         }
-        const emailExists = await prisma.candidates.findUnique({ where: { email } });
+        const emailExists = await prisma.recruiter.findUnique({ where: { email } });
         if (emailExists) {
-            return res.status(400).json({ message: 'Email already exists' });
+            res.status(400).json({ message: 'Email already exists' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        const candidate = await prisma.candidates.create({
+    
+        const recruiter = await prisma.recruiter.create({
             data: {
-                externalId: externalId,
+                externalId,
                 name,
                 age,
                 username,
+                company,
                 email,
                 password: hashedPassword
             }
         });
 
-        const token = jwt.sign({ id: candidate.externalId, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        
+        const token = jwt.sign({ id: recruiter.externalId, email: recruiter.email }, process.env.JWT_SECRET, {expiresIn: '1h'});
+
         res.status(201).json({
-            message: 'Candidate registered successfully',
-            candidate: { name: candidate.name, username: candidate.username, email: candidate.email },
+            message: 'Recruiter registered successfully',
+            recruiter: { name: recruiter.name, username: recruiter.username, email: recruiter.email },
             token
         });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Internal server error' });
     }
-});
+})
 
 /**
  * @swagger
- * /candidate/login:
+ * /recruiter/login:
  *   post:
- *     summary: Faz login no sistema como candidato
+ *     summary: Faz login no sistema como recrutador
  *     description: Faz login no sistema, validando a senha e criando um token JWT.
- *     tags: [Candidate]
+ *     tags: [Recruiter]
  *     requestBody:
  *       required: true
  *       content:
@@ -161,7 +153,6 @@ router.post('/register', async (req, res) => {
 
 //FAZ LOGIN
 router.post('/login', async (req, res) => {
-
     try {
         const { email, password } = req.body;
 
@@ -169,97 +160,62 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Fill in all fields' });
         }
 
-        const candidate = await prisma.candidates.findUnique({ where: { email } });
-        if (!candidate) {
-            return res.status(401).json({ message: 'Candidate not found' });
+        const recruiter = await prisma.recruiter.findUnique({ where: { email } });
+        if (!recruiter) {
+            return res.status(400).json({ message: 'Recruiter not found' });
         }
-
-        const passwordMatch = await bcrypt.compare(password, candidate.password);
+        const passwordMatch = await bcrypt.compare(password, recruiter.password);
         if (!passwordMatch) {
             return res.status(401).json({ message: 'Invalid password' });
         }
-    
-        const token = jwt.sign({ id: candidate.externalId, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const token = jwt.sign({ id: recruiter.externalId, email: recruiter.email, role: recruiter.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({
-            message: 'Candidate logged in successfully',
-            candidate: { username: candidate.username, email: candidate.email },
+            message: 'Recruiter logged in successfully',
+            recruiter: { username: recruiter.username, email: recruiter.email },
             token
-        });
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Internal server error' });
     }
-});
+    
+})
 
 /**
  * @swagger
- * /candidate/:id/profile:
- *   post:
- *     summary: Atualiza o perfil de um candidato
- *     description: Atualiza o perfil de um candidato com informações adicionais.
- *     tags: [Candidate]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               schooling:
- *                 type: string
- *               intituition:
- *                 type: string
- *               summary:
- *                 type: string
- *               mainSkill:
- *                 type: string
- *               otherSkills:    
- *                 type: string
- *               experience:
- *                 type: string
+ * /recruiter/candidates:
+ *   get:
+ *     summary: Lista todos os candidatos
+ *     description: Retorna um JSON com todos os candidatos.
+ *     tags:
+ *       - Test
  *     responses:
- *       201:
- *         description: Usuário registrado com sucesso
+ *       200:
+ *         description: Sucesso. Retorna todos os candidatos
  *       500:
  *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Hello World"
  */
 
-//ATUALIZA O PERFIL DO CANDIDATO COM INFORMAÇÕES ADICIONAIS
-router.post('/:id/profile', authenticate, async (req, res) => {
-    const { id } = req.params;
-    const { schooling, instituition, summary, mainSkill, otherSkills, experience } = req.body;
-
+//LISTA TODOS OS CANDIDATOS
+router.get('/candidates', authenticate, isRecruiter, async (req, res) => {
     try {
-        const existingCandidate = await prisma.candidatesProfile.findUnique({
-            where: { userId: id }
-        });
-
-        let profile;
-
-        if (existingCandidate) {
-            profile = await prisma.candidatesProfile.update({
-                where: { userId: id },
-                data: { schooling, instituition, summary, mainSkill, otherSkills, experience }
-            });
-        }else {
-            profile = await prisma.candidatesProfile.create({
-                data: {
-                    userId: id,
-                    schooling,
-                    instituition,
-                    summary,
-                    mainSkill,
-                    otherSkills,
-                    experience
-                }
-            });
-        }
-
-        res.status(200).json({ message: 'Candidate profile updated successfully', profile });
+        const candidates = await prisma.candidates.findMany();
+        res.status(200).json(candidates);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Internal server error' });
     }
-});
+})
 
-export { router as candidate };
+
+
+export { router as recruiter };

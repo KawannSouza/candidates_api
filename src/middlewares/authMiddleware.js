@@ -16,4 +16,17 @@ const authenticate = (req, res, next) => {
     }
 }
 
+const isRecruiter =  (req, res, next) => {
+    if (!req.user) {
+        return res.status(401),json({ message: 'Unauthorized' });
+    }
+
+    if (req.user.role !== 'RECRUITER') {
+        return res.status(403).json({ message: 'Access forbidden: Recruiters only' });
+    }
+
+    next();
+}
+
 export default authenticate;
+export { isRecruiter };
